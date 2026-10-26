@@ -1,0 +1,23 @@
+<!doctype html><html><body><button id="run">run drawing checks</button><pre id="result">ready</pre><iframe src="../dist/" width="1200" height="1000"></iframe><script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('iframe');
+document.querySelector('#run').onclick=async()=>{try{
+const d=frame.contentDocument,c=d.querySelector('#canvas'),ctx=c.getContext('2d');c.setPointerCapture=()=>{};
+const click=s=>d.querySelector(s).click();const check=(v,msg)=>{if(!v)throw Error(msg);result.textContent+='\npass: '+msg;};
+const sample=(x,y)=>ctx.getImageData(x,y,1,1).data[3];
+const stroke=points=>{const r=c.getBoundingClientRect();for(let i=0;i<points.length;i++){const [x,y]=points[i];c.dispatchEvent(new PointerEvent(i?'pointermove':'pointerdown',{pointerId:1,pointerType:'mouse',button:0,clientX:r.left+x/1200*r.width,clientY:r.top+y/900*r.height,bubbles:true}));}c.dispatchEvent(new PointerEvent('pointerup',{pointerId:1,bubbles:true}));};
+result.textContent='running';d.querySelector('#smooth').value=0;
+stroke([[100,100],[400,100],[400,400],[100,400],[100,100]]);click('[data-tool=fill]');stroke([[200,200]]);
+check(sample(200,200)===255,'bucket fills enclosed interior');check(sample(500,500)===0,'bucket leaves exterior untouched');
+click('#undo');check(sample(200,200)===0,'fill undo');click('#redo');check(sample(200,200)===255,'fill redo');
+d.querySelector('#color-hex').value='#eb4580';d.querySelector('#color-hex').dispatchEvent(new Event('input'));
+click('[data-tool=lasso]');stroke([[550,100],[850,100],[850,400],[550,400],[550,100]]);
+check(sample(700,200)===255,'lasso fills on release');check(!d.querySelector('#selection-actions'),'selection actions removed');
+check(ctx.getImageData(700,200,1,1).data[0]===235,'lasso uses selected color');
+const start=performance.now();for(let i=0;i<10;i++){click('#undo');click('#redo');}result.textContent+='\n20 cached history actions: '+Math.round(performance.now()-start)+'ms';
+check(sample(700,200)===255,'cached redo restores lasso');click('#undo');check(sample(700,200)===0&&sample(200,200)===255,'lasso undo preserves earlier work');click('#redo');
+d.querySelector('#color-hex').value='#d47aef';d.querySelector('#color-hex').dispatchEvent(new Event('input'));check(d.querySelector('#ink-color').value==='#d47aef','color picker and hex stay in sync');click('[data-tool=airbrush]');stroke([[600,600],[650,600]]);check(sample(625,600)>0&&sample(625,600)<255,'airbrush soft opacity');check(sample(625,650)===0,'airbrush bounded falloff');const rgba=ctx.getImageData(625,600,1,1).data;check(rgba[0]>rgba[1]&&rgba[2]>rgba[0],'airbrush paints the selected color');click('#undo');check(sample(625,600)===0,'colored stroke undo');click('#redo');check(sample(625,600)>0,'colored stroke redo');
+const original=c.toDataURL(),originalPixels=ctx.getImageData(0,0,1200,900).data;click('[data-tool=brush]');for(let i=0;i<12;i++)stroke([[50+i*30,750]]);const extended=c.toDataURL();for(let i=0;i<12;i++)click('#undo');{const actual=ctx.getImageData(0,0,1200,900).data;let n=0,max=0;for(let i=0;i<actual.length;i++)if(actual[i]!==originalPixels[i]){n++;max=Math.max(max,Math.abs(actual[i]-originalPixels[i]));}result.textContent+='\npixel differences: '+n+' max '+max;}check(c.toDataURL()===original,'undo beyond snapshot cache');for(let i=0;i<12;i++)click('#redo');check(c.toDataURL()===extended,'redo beyond snapshot cache');click('#clear');click('#confirm-clear');click('#undo');check(c.toDataURL()===extended,'erase canvas undo');
+const before=c.toDataURL();frame.contentWindow.location.reload();await new Promise(resolve=>frame.onload=resolve);const next=frame.contentDocument;check(next.querySelector('#canvas').getContext('2d').getImageData(700,200,1,1).data[3]===0,'reload starts blank');next.querySelector('#restore').click();check(next.querySelector('#canvas').toDataURL()===before,'restore replays bucket, lasso and airbrush exactly');
+result.textContent+='\nall checks passed';
+}catch(e){result.textContent+='\nFAIL: '+e.stack;}};
+</script></body></html>
