@@ -57,15 +57,12 @@ body{background-color:#090910;background-image:url('noise.svg'),linear-gradient(
 
 .color-control{margin:0 0 24px}.color-inputs{display:flex;gap:8px;align-items:center}.color-inputs input{height:44px;border:1px solid var(--line);border-radius:2px;background:#1b1826;color:var(--ink)}#ink-color{width:48px;min-width:48px;padding:4px;cursor:pointer}#color-hex{width:100%;min-width:0;padding:8px;font-size:14px}#ink-color::-webkit-color-swatch-wrapper{padding:0}#ink-color::-webkit-color-swatch{border:1px solid #ffffff50;border-radius:2px}#ink-color::-moz-color-swatch{border:1px solid #ffffff50;border-radius:2px}@media(max-width:650px){.color-control{grid-column:1/-1;margin:0}.color-inputs{max-width:240px}}
 
-/* Match the studio panels while preserving the artwork's proportions. */
+/* Fit the drawing panel to its canvas and status text. */
 @media(min-width:651px){
- .workspace>.tools,.workspace>.drawing-area{align-self:stretch}
+ .workspace>.drawing-area{align-self:start}
  .drawing-area{display:flex;flex-direction:column}
- .drawing-area>.canvas-stage{flex-shrink:0;margin-block:auto;width:100%}
+ .drawing-area>.canvas-stage{flex-shrink:0;margin-block:0;width:100%}
  .drawing-area>.canvas-top{flex-shrink:0}
- /* Reserve the restore control so starting a stroke cannot shift the canvas. */
- .tools>#restore[hidden]{display:block!important;visibility:hidden}
- .tools>#save-state{min-height:3.2em}
 }
 
 .drawing-area{background:#090910}
